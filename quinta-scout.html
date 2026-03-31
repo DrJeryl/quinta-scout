@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quinta Scout — Portugal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f1409;
+    --surface: #171e0b;
+    --surface2: #1e2810;
+    --border: rgba(139,168,60,0.15);
+    --border2: rgba(139,168,60,0.35);
+    --green: #8ba83c;
+    --green-light: #b5d15a;
+    --green-dim: rgba(139,168,60,0.07);
+    --amber: #c8922a;
+    --red: #b85050;
+    --blue: #4a90c4;
+    --text: #e8e4d8;
+    --text-dim: #6a7060;
+    --text-mid: #a8a89a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; padding-bottom: 80px; }
+
+  header { border-bottom: 1px solid var(--border); padding: 20px 36px; display: flex; align-items: baseline; gap: 14px; position: sticky; top: 0; background: rgba(15,20,9,0.97); backdrop-filter: blur(10px); z-index: 100; }
+  header h1 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 20px; color: var(--green-light); letter-spacing: -0.02em; }
+  header .sub { font-size: 11px; color: var(--text-dim); letter-spacing: 0.07em; text-transform: uppercase; }
+
+  .main { max-width: 820px; margin: 0 auto; padding: 28px 20px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .tab { flex: 1; padding: 9px 10px; text-align: center; font-size: 12px; color: var(--text-dim); cursor: pointer; border-radius: 7px; transition: all 0.18s; user-select: none; white-space: nowrap; }
+  .tab.active { background: var(--surface2); color: var(--green-light); border: 1px solid var(--border); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Bookmarklet panel ── */
+  .bm-steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+
+  .bm-step { display: flex; gap: 14px; align-items: flex-start; }
+  .bm-num { width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--green); flex-shrink: 0; font-weight: 500; }
+  .bm-text { font-size: 13px; color: var(--text-mid); line-height: 1.6; padding-top: 3px; }
+  .bm-text strong { color: var(--text); font-weight: 400; }
+
+  .bookmarklet-btn {
+    display: inline-block;
+    background: var(--blue);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: grab;
+    border: none;
+    transition: opacity 0.2s;
+    user-select: none;
+  }
+  .bookmarklet-btn:hover { opacity: 0.85; }
+
+  .bm-drag-hint { font-size: 11px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+
+  .bm-demo {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .bm-demo-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 8px; }
+  .bm-demo-text { font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+
+  /* ── Image panel ── */
+  .drop-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: 12px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--green); background: var(--green-dim); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop-zone .dz-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+  .drop-zone .dz-title { font-size: 14px; color: var(--text-mid); margin-bottom: 4px; }
+  .drop-zone .dz-hint { font-size: 11px; color: var(--text-dim); }
+
+  .img-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .img-thumb {
+    position: relative;
+    width: 90px; height: 70px;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .img-thumb .rm-img { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+
+  /* ── Paste panel ── */
+  textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 300; line-height: 1.6; resize: vertical; min-height: 140px; outline: none;
+    transition: border-color 0.2s; margin-bottom: 10px;
+  }
+  textarea:focus { border-color: var(--border2); }
+  textarea::placeholder { color: var(--text-dim); }
+
+  .src-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 13px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 300; outline: none; margin-bottom: 10px; transition: border-color 0.2s; }
+  .src-input:focus { border-color: var(--border2); }
+  .src-input::placeholder { color: var(--text-dim); }
+
+  .hint { font-size: 11px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.5; padding: 9px 12px; background: var(--green-dim); border-radius: 7px; border: 1px solid var(--border); }
+
+  .analyze-btn { width: 100%; padding: 13px; background: var(--green); color: #0f1409; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.18s; margin-bottom: 28px; }
+  .analyze-btn:hover { background: var(--green-light); }
+  .analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Result cards ── */
+  .results { display: flex; flex-direction: column; gap: 14px; }
+  .empty-state { text-align: center; padding: 44px 24px; color: var(--text-dim); font-size: 13px; line-height: 1.8; }
+  .empty-state .ico { font-size: 28px; display: block; margin-bottom: 10px; }
+
+  .result-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); animation: fadeUp 0.35s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .result-card.s-high { border-color: rgba(139,168,60,0.5); }
+  .result-card.s-mid  { border-color: rgba(200,146,42,0.4); }
+  .result-card.s-low  { border-color: rgba(184,80,80,0.35); }
+
+  .card-type-tag { font-size: 9px; padding: 2px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+  .tag-img  { background: rgba(74,144,196,0.15); color: var(--blue); }
+  .tag-text { background: rgba(139,168,60,0.12); color: var(--green); }
+
+  .card-head { padding: 15px 18px; display: flex; align-items: center; gap: 13px; border-bottom: 1px solid var(--border); }
+  .score-circle { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500; flex-shrink: 0; }
+  .s-high .score-circle { background: rgba(139,168,60,0.14); color: var(--green-light); }
+  .s-mid  .score-circle { background: rgba(200,146,42,0.13); color: var(--amber); }
+  .s-low  .score-circle { background: rgba(184,80,80,0.11); color: var(--red); }
+
+  .card-meta { flex: 1; min-width: 0; }
+  .card-meta h3 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 15px; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta .src { font-size: 10px; color: var(--text-dim); }
+
+  .verdict-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 9px; border-radius: 20px; font-weight: 500; flex-shrink: 0; }
+  .s-high .verdict-tag { background: rgba(139,168,60,0.14); color: var(--green-light); }
+  .s-mid  .verdict-tag { background: rgba(200,146,42,0.12); color: var(--amber); }
+  .s-low  .verdict-tag { background: rgba(184,80,80,0.1);  color: var(--red); }
+
+  .card-body { padding: 16px 18px; }
+  .analysis-text { font-size: 13px; color: var(--text-mid); line-height: 1.75; margin-bottom: 16px; }
+
+  .scores-section-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 7px; }
+  .scores-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 12px; }
+
+  .sc-item { background: var(--surface2); border-radius: 8px; padding: 9px 11px; }
+  .sc-item.bonus { border: 1px solid rgba(200,146,42,0.15); }
+  .sc-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+  .bonus-tag { font-size: 8px; background: rgba(200,146,42,0.12); color: var(--amber); border-radius: 10px; padding: 1px 5px; }
+  .bar-wrap { background: rgba(255,255,255,0.04); border-radius: 3px; height: 3px; overflow: hidden; margin-bottom: 4px; }
+  .bar { height: 100%; border-radius: 3px; transition: width 0.9s cubic-bezier(.16,1,.3,1); }
+  .bar.g { background: var(--green); }
+  .bar.a { background: var(--amber); }
+  .bar.r { background: var(--red); }
+  .sc-note { font-size: 11px; color: var(--text-mid); line-height: 1.4; }
+
+  .loading-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px 18px; background: var(--surface); display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-dim); }
+  .spinner { width: 18px; height: 18px; border: 1.5px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.75s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .err-card { border: 1px solid rgba(184,80,80,0.3); border-radius: 10px; padding: 13px 15px; background: rgba(184,80,80,0.05); font-size: 12px; color: #c07070; line-height: 1.5; }
+
+  .platforms { margin-top: 36px; padding-top: 26px; border-top: 1px solid var(--border); }
+  .section-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-dim); margin-bottom: 12px; }
+  .platform-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; }
+  .ptag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 11px; font-size: 11px; color: var(--text-mid); }
+  .how-box { background: var(--green-dim); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .how-box h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); margin-bottom: 12px; }
+  .how-box ol { padding-left: 15px; display: flex; flex-direction: column; gap: 6px; }
+  .how-box li { font-size: 12px; color: var(--text-mid); line-height: 1.55; }
+  .how-box li strong { color: var(--text); font-weight: 400; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Quinta Scout</h1>
+  <span class="sub">Portugal · AI-Analyse · v4</span>
+</header>
+
+<div class="main">
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('bookmarklet')">🔖 Bookmarklet (schnellster Weg)</div>
+    <div class="tab" onclick="switchTab('image')">🖼 Bilder analysieren</div>
+    <div class="tab" onclick="switchTab('paste')">📋 Text einfügen</div>
+  </div>
+
+  <!-- ── BOOKMARKLET PANEL ── -->
+  <div class="panel active" id="panel-bookmarklet">
+    <div class="hint">Einmal einrichten — dann reicht ein Klick auf jeder Idealista-Seite um das Inserat direkt hierher zu schicken.</div>
+
+    <div class="bm-steps">
+      <div class="bm-step">
+        <div class="bm-num">1</div>
+        <div class="bm-text">Ziehe diesen Button in deine <strong>Lesezeichen-Leiste</strong> (Favoriten-Leiste muss sichtbar sein — Strg+Shift+B):</div>
+      </div>
+      <div style="padding-left:40px;margin-bottom:4px">
+        <a class="bookmarklet-btn" id="bmLink" href="#">🏡 Quinta Scout</a>
+        <div class="bm-drag-hint">← Diesen Button in die Lesezeichen-Leiste ziehen. Funktioniert in Chrome, Firefox, Edge und Safari.</div>
+      </div>
+
+      <div class="bm-step">
+        <div class="bm-num">2</div>
+        <div class="bm-text">Öffne ein beliebiges Inserat auf <strong>idealista.pt</strong>, <strong>imovirtual.com</strong>, <strong>casa.sapo.pt</strong> oder anderen Portalen.</div>
+      </div>
+
+      <div class="bm-step">
+        <div class="bm-num">3</div>
+        <div class="bm-text">Klicke auf <strong>"Quinta Scout"</strong> in deiner Lesezeichen-Leiste → der Text wird automatisch extrahiert und in das Textfeld unten eingefügt.</div>
+      </div>
+
+      <div class="bm-step">
+        <div class="bm-num">4</div>
+        <div class="bm-text">Klicke auf <strong>"Inserat analysieren"</strong> — fertig.</div>
+      </div>
+    </div>
+
+    <div class="bm-demo">
+      <div class="bm-demo-label">Was das Bookmarklet extrahiert</div>
+      <div class="bm-demo-text">Titel · Preis · Beschreibung · Grundstücksgröße · Lage · alle aufgelisteten Ausstattungsmerkmale — automatisch aus der Seite herausgezogen, ohne dass du etwas markieren musst.</div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="hint" style="margin-bottom:10px"><strong style="color:var(--text-mid)">Oder:</strong> Extrahierter Text erscheint automatisch unten im Textfeld — direkt analysieren.</div>
+      <textarea id="bmPasteInput" placeholder="Text erscheint hier automatisch nach Bookmarklet-Klick — oder manuell einfügen…" style="min-height:110px"></textarea>
+      <input class="src-input" id="bmSource" placeholder="URL wird automatisch eingetragen" />
+      <button class="analyze-btn" onclick="analyzeField('bmPasteInput','bmSource','bookmarklet')">Inserat analysieren</button>
+    </div>
+  </div>
+
+  <!-- ── IMAGE PANEL ── -->
+  <div class="panel" id="panel-image">
+    <div class="hint">Lade Screenshots oder Fotos eines Inserats hoch. Der Agent analysiert Zustand des Hauses, Vegetation, Landschaft und gibt eine visuelle Einschätzung zum Brandrisiko.</div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="imgInput" accept="image/*" multiple onchange="handleFiles(this.files)" />
+      <span class="dz-icon">📸</span>
+      <div class="dz-title">Bilder hier ablegen oder klicken</div>
+      <div class="dz-hint">Screenshots, Fotos, Drohnenaufnahmen — JPG, PNG, WebP</div>
+    </div>
+
+    <div class="img-previews" id="imgPreviews"></div>
+
+    <input class="src-input" id="imgSource" placeholder="URL des Inserats (optional)" />
+    <textarea id="imgContext" placeholder="Optionaler Kontext zum Inserat (Preis, Region, Größe…)" style="min-height:80px"></textarea>
+    <button class="analyze-btn" id="imgAnalyzeBtn" onclick="analyzeImages()" disabled>Bilder analysieren</button>
+  </div>
+
+  <!-- ── PASTE PANEL ── -->
+  <div class="panel" id="panel-paste">
+    <div class="hint"><strong style="color:var(--text-mid)">Manuell:</strong> Inserat öffnen → Strg+A → Strg+C → hier einfügen.</div>
+    <textarea id="pasteInput" placeholder="Inseratstext hier einfügen…"></textarea>
+    <input class="src-input" id="pasteSource" placeholder="URL (optional)" />
+    <button class="analyze-btn" onclick="analyzeField('pasteInput','pasteSource','text')">Inserat analysieren</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="empty-state">
+      <span class="ico">🌿</span>
+      Bookmarklet einrichten für den schnellsten Workflow.<br>
+      Oder Bilder / Text direkt hier analysieren lassen.
+    </div>
+  </div>
+
+  <div class="platforms">
+    <div class="section-lbl">Empfohlene Portale</div>
+    <div class="platform-row">
+      <span class="ptag">idealista.pt ★</span>
+      <span class="ptag">imovirtual.com ★</span>
+      <span class="ptag">pureportugal.co.uk</span>
+      <span class="ptag">casa.sapo.pt</span>
+      <span class="ptag">green-acres.pt</span>
+      <span class="ptag">olx.pt</span>
+      <span class="ptag">custojusto.pt</span>
+      <span class="ptag">remax.pt</span>
+    </div>
+    <div class="how-box">
+      <h4>Empfohlener täglicher Workflow</h4>
+      <ol>
+        <li>E-Mail-Alerts auf <strong>idealista.pt</strong> und <strong>imovirtual.com</strong> aktivieren → neue Inserate automatisch per Mail</li>
+        <li>Interessantes Inserat? Seite öffnen → Bookmarklet klicken → analysieren (5 Sekunden)</li>
+        <li>Bei Inseraten mit Fotos: Screenshots hochladen → Bildanalyse für visuellen Eindruck</li>
+        <li>Wöchentlich <strong>pureportugal.co.uk</strong> und <strong>olx.pt</strong> manuell checken</li>
+        <li>Score 65+ → Bericht an euren Anwalt (<em>advogado</em>) weiterleiten · Vor Besichtigung: <em>Caderneta Predial</em> anfragen</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Bookmarklet code ──
+const SCOUT_URL = window.location.href.split('?')[0];
+
+const bmCode = `javascript:(function(){
+  var t='';
+  var title=document.querySelector('h1,h2,.title-container,.main-info__title');
+  if(title)t+=title.innerText.trim()+'\\n\\n';
+  var price=document.querySelector('.info-data-price,.price,.txt-bold[class*="price"]');
+  if(price)t+='Preis: '+price.innerText.trim()+'\\n';
+  var loc=document.querySelector('.main-info__title-minor,.location,.address,[class*="location"]');
+  if(loc)t+='Lage: '+loc.innerText.trim()+'\\n';
+  var desc=document.querySelector('#description,.ad-comment,.description-block,.detail-info-description');
+  if(desc)t+='\\nBeschreibung:\\n'+desc.innerText.trim()+'\\n';
+  var chars=document.querySelectorAll('.details-property_features li,.feature,.chars-block li,[class*="feature-item"]');
+  if(chars.length){t+='\\nAusstattung:\\n';chars.forEach(function(c){t+='- '+c.innerText.trim()+'\\n';});}
+  var area=document.querySelector('[class*="area"],[class*="superficie"],[class*="size"]');
+  if(area&&!t.includes(area.innerText.trim()))t+='Fläche: '+area.innerText.trim()+'\\n';
+  if(!t.trim()){t=document.body.innerText.substring(0,4000);}
+  var url=window.location.href;
+  var w=window.open('${SCOUT_URL}?text='+encodeURIComponent(t.substring(0,6000))+'&src='+encodeURIComponent(url),'_blank');
+  if(!w){prompt('Text kopieren:',t.substring(0,3000));}
+})();`;
+
+document.getElementById('bmLink').href = bmCode;
+
+// Read from URL params (when bookmarklet opens this page)
+window.addEventListener('load', function() {
+  const p = new URLSearchParams(window.location.search);
+  const txt = p.get('text');
+  const src = p.get('src');
+  if (txt) {
+    document.getElementById('bmPasteInput').value = decodeURIComponent(txt);
+    if (src) document.getElementById('bmSource').value = decodeURIComponent(src);
+    switchTab('bookmarklet');
+    document.getElementById('bmPasteInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
+// ── Image handling ──
+const imageFiles = [];
+
+function handleFiles(files) {
+  Array.from(files).forEach(f => {
+    if (!f.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      imageFiles.push({ name: f.name, data: e.target.result, type: f.type });
+      renderPreviews();
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+function removeImage(i) { imageFiles.splice(i, 1); renderPreviews(); }
+
+function renderPreviews() {
+  document.getElementById('imgPreviews').innerHTML = imageFiles.map((img, i) =>
+    `<div class="img-thumb"><img src="${img.data}" alt=""/><button class="rm-img" onclick="removeImage(${i})">×</button></div>`
+  ).join('');
+  document.getElementById('imgAnalyzeBtn').disabled = imageFiles.length === 0;
+}
+
+// ── Claude API ──
+const SYSTEM = `Du bist ein erfahrener und pragmatischer Immobilienberater für Off-Grid Quintas in Portugal.
+
+Die Familie sucht (flexibel bewerten):
+KERNKRITERIEN: Region Setúbal/Costa Azul, Alentejo Litoral oder Oeste (max. 40 Min. Küste) · 2–10 ha · max. 300k€ · Randlage Dorf OK · niedriges Brandrisiko
+WICHTIG: Obstbäume vorhanden · Brunnen/Quelle
+BONUS: Strom angeschlossen · Abwasser · altes Haus/Ruine zum Umbau
+
+Familie 3–4 Personen, kein Tier zunächst, Solar Off-Grid geplant. Sanierung ist OK.
+Sei pragmatisch — Potenzial zählt genauso wie aktueller Zustand.
+
+Antworte NUR mit validem JSON ohne Backticks:
+{
+  "title": "Titel max 55 Zeichen",
+  "gesamtscore": 74,
+  "verdict": "Vielversprechend",
+  "analyse": "3-4 Sätze: Stärken, Schwächen, konkrete Empfehlung",
+  "kernkriterien": {
+    "region_kueste": { "score": 80, "note": "max 10 Wörter" },
+    "groesse_budget": { "score": 70, "note": "max 10 Wörter" },
+    "lage_ort":       { "score": 75, "note": "max 10 Wörter" },
+    "brandrisiko":    { "score": 65, "note": "max 10 Wörter" }
+  },
+  "bonuskriterien": {
+    "obstbaeume": { "score": 60, "vorhanden": true,  "note": "max 8 Wörter" },
+    "wasser":     { "score": 50, "vorhanden": false, "note": "max 8 Wörter" },
+    "strom":      { "score": 40, "vorhanden": false, "note": "max 8 Wörter" },
+    "abwasser":   { "score": 30, "vorhanden": false, "note": "max 8 Wörter" },
+    "gebaeude":   { "score": 70, "vorhanden": true,  "note": "max 8 Wörter" }
+  }
+}
+Verdict: "Sehr empfehlenswert" (>=78), "Vielversprechend" (62-77), "Mit Vorbehalt" (45-61), "Nicht empfohlen" (<45).
+Nicht erwähnt = score 35, vorhanden: false, note "Nicht erwähnt — erfragen".`;
+
+const IMG_SYSTEM = SYSTEM + `\n\nDu analysierst BILDER eines Inserats. Kommentiere was du visuell siehst: Zustand des Gebäudes, Vegetation (Obstbäume erkennbar?), Landschaftstyp, Brandrisiko-Einschätzung anhand der Umgebung, Hangausrichtung falls erkennbar, allgemeiner Eindruck. Sei konkret über das was auf den Bildern sichtbar ist.`;
+
+async function callClaude(messages, system) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1200,
+      system: system || SYSTEM,
+      messages
+    })
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const d = await res.json();
+  const raw = d.content.map(b => b.type === 'text' ? b.text : '').join('').trim();
+  const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+  if (s < 0 || e < 0) throw new Error('Kein JSON erhalten');
+  return JSON.parse(raw.slice(s, e + 1));
+}
+
+// ── Tab switching ──
+function switchTab(t) {
+  const ids = ['bookmarklet', 'image', 'paste'];
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', ids[i] === t));
+  ids.forEach(id => {
+    document.getElementById('panel-' + id).classList.toggle('active', id === t);
+  });
+}
+
+// ── Analyze text field ──
+async function analyzeField(textId, srcId, type) {
+  const text = document.getElementById(textId).value.trim();
+  const src  = document.getElementById(srcId).value.trim();
+  if (!text) { alert('Bitte zuerst Text einfügen.'); return; }
+  const lid = showLoader('Analysiere Inserat…');
+  try {
+    const r = await callClaude([{ role: 'user', content: 'Analysiere dieses Inserat:\n\n' + text }]);
+    removeLoader(lid);
+    prependCard(r, src || 'Inserat', type);
+    document.getElementById(textId).value = '';
+    document.getElementById(srcId).value = '';
+  } catch(err) {
+    removeLoader(lid);
+    prependError('Analyse fehlgeschlagen: ' + err.message);
+  }
+}
+
+// ── Analyze images ──
+async function analyzeImages() {
+  if (!imageFiles.length) return;
+  const ctx  = document.getElementById('imgContext').value.trim();
+  const src  = document.getElementById('imgSource').value.trim();
+  const lid  = showLoader(`Analysiere ${imageFiles.length} Bild${imageFiles.length > 1 ? 'er' : ''}…`);
+
+  const content = imageFiles.map(img => ({
+    type: 'image',
+    source: { type: 'base64', media_type: img.type, data: img.data.split(',')[1] }
+  }));
+
+  if (ctx) content.push({ type: 'text', text: 'Zusätzlicher Kontext: ' + ctx });
+  content.push({ type: 'text', text: 'Analysiere diese Bilder dieses Grundstücks / Inserats.' });
+
+  try {
+    const r = await callClaude([{ role: 'user', content }], IMG_SYSTEM);
+    removeLoader(lid);
+    prependCard(r, src || `${imageFiles.length} Bild(er)`, 'image');
+    imageFiles.length = 0;
+    renderPreviews();
+    document.getElementById('imgContext').value = '';
+    document.getElementById('imgSource').value = '';
+  } catch(err) {
+    removeLoader(lid);
+    prependError('Bildanalyse fehlgeschlagen: ' + err.message);
+  }
+}
+
+// ── Helpers ──
+function showLoader(msg) {
+  const el = document.createElement('div');
+  const id = 'l' + Date.now();
+  el.id = id; el.className = 'loading-card';
+  el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  const r = document.getElementById('results');
+  r.querySelector('.empty-state')?.remove();
+  r.insertBefore(el, r.firstChild);
+  return id;
+}
+function removeLoader(id) { document.getElementById(id)?.remove(); }
+function prependError(msg) {
+  const el = document.createElement('div');
+  el.className = 'err-card'; el.textContent = msg;
+  document.getElementById('results').insertBefore(el, document.getElementById('results').firstChild);
+}
+
+function bc(s) { return s >= 68 ? 'g' : s >= 42 ? 'a' : 'r'; }
+
+function prependCard(r, src, type) {
+  const sc  = r.gesamtscore;
+  const cls = sc >= 78 ? 's-high' : sc >= 62 ? 's-mid' : 's-low';
+  const typeTag = type === 'image'
+    ? '<span class="card-type-tag tag-img">📸 Bildanalyse</span>'
+    : type === 'bookmarklet'
+    ? '<span class="card-type-tag tag-text">🔖 Bookmarklet</span>'
+    : '<span class="card-type-tag tag-text">📋 Text</span>';
+
+  const kern = [
+    ['Region & Küste',   r.kernkriterien.region_kueste],
+    ['Größe & Budget',   r.kernkriterien.groesse_budget],
+    ['Lage im Ort',      r.kernkriterien.lage_ort],
+    ['Brandrisiko',      r.kernkriterien.brandrisiko],
+  ];
+  const bonus = [
+    ['Obstbäume',  r.bonuskriterien.obstbaeume],
+    ['Wasser',     r.bonuskriterien.wasser],
+    ['Strom',      r.bonuskriterien.strom],
+    ['Abwasser',   r.bonuskriterien.abwasser],
+    ['Gebäude',    r.bonuskriterien.gebaeude],
+  ];
+  const chk = v => v
+    ? `<span style="color:var(--green);font-size:10px">✓</span>`
+    : `<span style="color:var(--text-dim);font-size:10px">–</span>`;
+
+  const card = document.createElement('div');
+  card.className = `result-card ${cls}`;
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="score-circle">${sc}</div>
+      <div class="card-meta">
+        <h3>${r.title || 'Inserat'} ${typeTag}</h3>
+        <span class="src">${src}</span>
+      </div>
+      <div class="verdict-tag">${r.verdict}</div>
+    </div>
+    <div class="card-body">
+      <div class="analysis-text">${r.analyse}</div>
+      <div class="scores-section-label">Kernkriterien</div>
+      <div class="scores-grid">
+        ${kern.map(([l, k]) => `
+          <div class="sc-item">
+            <div class="sc-label">${l}</div>
+            <div class="bar-wrap"><div class="bar ${bc(k.score)}" style="width:${k.score}%"></div></div>
+            <div class="sc-note">${k.note}</div>
+          </div>`).join('')}
+      </div>
+      <div class="scores-section-label">Bonus</div>
+      <div class="scores-grid">
+        ${bonus.map(([l, k]) => `
+          <div class="sc-item bonus">
+            <div class="sc-label">${l} <span class="bonus-tag">+</span> ${chk(k.vorhanden)}</div>
+            <div class="bar-wrap"><div class="bar ${bc(k.score)}" style="width:${k.score}%"></div></div>
+            <div class="sc-note">${k.note}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('results').insertBefore(card, document.getElementById('results').firstChild);
+}
+</script>
+</body>
+</html>
